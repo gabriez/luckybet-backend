@@ -1,0 +1,1 @@
+export const USER_CORE_PROVIDER = 'USER_CORE_PROVIDER';

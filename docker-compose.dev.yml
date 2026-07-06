@@ -28,7 +28,7 @@ services:
 
   dbgate:
     image: dbgate/dbgate:latest
-    container_name: backoffice-dbgate
+    container_name: backoffice-dbgate-luckybet
     ports:
       - '8050:3000'
     environment:

@@ -8,6 +8,8 @@ import {
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { cleanupOpenApiDoc } from 'nestjs-zod';
 import { AppModule } from './app.module';
+import { HttpErrorsException } from './shared/exceptions/HttpErrors.exception';
+import { TypeORMErrorsException } from './shared/exceptions/TypeORMErrors.exception';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -18,6 +20,9 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
 
   app.setGlobalPrefix('api/v1.0');
+
+  app.useGlobalFilters(new TypeORMErrorsException());
+  app.useGlobalFilters(new HttpErrorsException());
 
   app.enableCors({
     origin: configService.get<string>('CORS_ALLOWED', 'http://localhost:4000'),
