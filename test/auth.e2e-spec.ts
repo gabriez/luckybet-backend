@@ -149,8 +149,12 @@ describe('Auth end to end tests', () => {
 
 			expect(response.body.message).toBe(DEFAULT_ERROR_MESSAGES[HttpStatus.NOT_FOUND]);
 		});
-  });
+	});
 
-  describe('POST /auth/logout', () => { })
-	describe('POST /auth/me', () => {})
+	describe('POST /auth/logout', () => {
+		//
+	});
+	describe('POST /auth/me', () => {
+		//
+	});
 });
