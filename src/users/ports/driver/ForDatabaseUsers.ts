@@ -1,28 +1,27 @@
 import { CreateUserDto } from '../../app/dto/create-user.dto';
 import { UpdateUserDto } from '../../app/dto/update-user.dto';
 import type {
-  UserUniqueFields,
-  UserWithMethods,
-  UserWithoutPassword,
+	UserUniqueFields,
+	UserWithMethods,
+	UserWithoutPassword,
 } from '../../app/dto/user.schema';
 
 export interface ForDatabaseUsers {
-  createUser(userData: CreateUserDto): Promise<UserWithoutPassword>;
+	createUser(userData: CreateUserDto): Promise<UserWithoutPassword>;
 
-  findByUnique({
-    username,
-    id,
-  }: UserUniqueFields): Promise<UserWithMethods | null>;
+	findByUnique({ username, id }: UserUniqueFields): Promise<UserWithoutPassword | null>;
 
-  getUsers(params: {
-    take?: number;
-    skip?: number;
-  }): Promise<[UserWithoutPassword[], number]>;
+	getUsers(params: {
+		take?: number;
+		skip?: number;
+	}): Promise<[UserWithoutPassword[], number]>;
 
-  updateUserById(
-    id: number,
-    userData: UpdateUserDto,
-  ): Promise<UserWithoutPassword | null>;
+	updateUserById(
+		id: number,
+		userData: UpdateUserDto,
+	): Promise<UserWithoutPassword | null>;
+
+	findToAuth(options: UserUniqueFields): Promise<UserWithMethods | null>;
 }
 
 /*

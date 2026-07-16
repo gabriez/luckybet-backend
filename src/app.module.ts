@@ -3,6 +3,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ZodValidationPipe } from 'nestjs-zod';
+
+import { AuthModule } from './auth/auth.module';
 import { HealthModule } from './health/health.module';
 import { buildTypeOrmOptionsFromConfig } from './shared/database/databaseOptions';
 import { RequestLoggerInterceptor } from './shared/interceptors/requestLogger.interceptor';
@@ -10,20 +12,20 @@ import { LoggerModule } from './shared/logger/logger.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
-  imports: [
-    ConfigModule.forRoot({ cache: true, isGlobal: true }),
-    TypeOrmModule.forRootAsync({
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) =>
-        buildTypeOrmOptionsFromConfig(config),
-    }),
-    HealthModule,
-    UsersModule,
-    LoggerModule,
-  ],
-  providers: [
-    { provide: APP_INTERCEPTOR, useClass: RequestLoggerInterceptor },
-    { provide: APP_PIPE, useClass: ZodValidationPipe },
-  ],
+	imports: [
+		ConfigModule.forRoot({ cache: true, isGlobal: true }),
+		TypeOrmModule.forRootAsync({
+			inject: [ConfigService],
+			useFactory: (config: ConfigService) => buildTypeOrmOptionsFromConfig(config),
+		}),
+		HealthModule,
+		UsersModule,
+		LoggerModule,
+		AuthModule,
+	],
+	providers: [
+		{ provide: APP_INTERCEPTOR, useClass: RequestLoggerInterceptor },
+		{ provide: APP_PIPE, useClass: ZodValidationPipe },
+	],
 })
 export class AppModule {}
