@@ -1,0 +1,33 @@
+schema: spec-driven
+
+context: |
+  Tech stack: NestJS 11, TypeScript 5.7, Fastify, TypeORM 1, PostgreSQL 16, Zod 4
+  Architecture: Hexagonal / Ports & Adapters (drivers/driven/ports/app layers)
+  Testing: Jest 30 + ts-jest, Testcontainers for integration, supertest for E2E
+  Style: Biome 2.5 (tabs, LF, 90 width), strict null checks, path aliases @/src/*
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+    - Consider impact on existing hexagonal port boundaries
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Include sequence diagrams for complex flows
+    - Document architecture decisions with rationale
+    - Respect hexagonal boundary conventions (ports in domain, adapters outside)
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+  apply:
+    - Follow existing code patterns (hexagonal structure, Zod validation, NestJS modules)
+    - Maintain existing test patterns (mock ports, test core logic in isolation)
+    tdd: true
+    test_command: "pnpm test"
+  verify:
+    test_command: "pnpm test"
+    build_command: "pnpm build"
+    coverage_threshold: 80
+  archive:
+    - Warn before merging destructive deltas

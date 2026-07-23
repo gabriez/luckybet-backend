@@ -1,0 +1,58 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: luckybet-postgres
+    env_file:
+      - .env
+    restart: unless-stopped
+    ports:
+      - '${DB_PORT:-5432}:5432'
+    environment:
+      - POSTGRES_USER=${DB_USERNAME:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+      - POSTGRES_DB=${DB_DATABASE:-backoffice}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${DB_USERNAME:-postgres} -d ${DB_DATABASE:-backoffice}',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - backoffice-network
+
+  dbgate:
+    image: dbgate/dbgate:latest
+    container_name: backoffice-dbgate-luckybet
+    ports:
+      - '8050:3000'
+    environment:
+      - CONNECTIONS=con1
+      - LABEL_con1=Backoffice PostgreSQL
+      - SERVER_con1=postgres
+      - USER_con1=${DB_USERNAME:-postgres}
+      - PASSWORD_con1=${DB_PASSWORD:-postgres}
+      - PORT_con1=5432
+      - ENGINE_con1=postgres@dbgate-plugin-postgres
+      - DATABASE_con1=${DB_DATABASE:-backoffice}
+    volumes:
+      - dbgate_data:/root/.dbgate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - backoffice-network
+
+networks:
+  backoffice-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  dbgate_data:

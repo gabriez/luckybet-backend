@@ -1,0 +1,10 @@
+export default {
+  projects: [
+    {
+      displayName: 'integration',
+      testMatch: ['**/*.integration-spec.ts'],
+      setupFilesAfterEnv: ['<rootDir>/test/setup-integration.ts'],
+      testTimeout: 60_000,
+    },
+  ],
+};
