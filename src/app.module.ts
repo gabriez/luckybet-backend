@@ -6,6 +6,7 @@ import { ZodValidationPipe } from 'nestjs-zod';
 
 import { AuthModule } from './auth/auth.module';
 import { HealthModule } from './health/health.module';
+import { MisionesModule } from './misiones/misiones.module';
 import { buildTypeOrmOptionsFromConfig } from './shared/database/databaseOptions';
 import { RequestLoggerInterceptor } from './shared/interceptors/requestLogger.interceptor';
 import { LoggerModule } from './shared/logger/logger.module';
@@ -22,6 +23,7 @@ import { UsersModule } from './users/users.module';
 		UsersModule,
 		LoggerModule,
 		AuthModule,
+		MisionesModule,
 	],
 	providers: [
 		{ provide: APP_INTERCEPTOR, useClass: RequestLoggerInterceptor },

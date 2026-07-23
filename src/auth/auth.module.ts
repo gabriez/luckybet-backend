@@ -34,7 +34,6 @@ import { AUTHCORE_PROVIDER } from './constants';
 				new AuthCore(jwtService, repo),
 			inject: [JwtService, UserRepoService],
 		},
-
 		JwtStrategy,
 		JwtGuard,
 	],

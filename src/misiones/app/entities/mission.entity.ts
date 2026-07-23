@@ -30,8 +30,8 @@ export class Mission extends BaseEntity {
 	})
 	status!: MissionStatus;
 
-	@Column({ type: 'int', nullable: false, name: 'chips_amount' })
-	chipsAmount!: number;
+	@Column({ type: 'int', nullable: false, name: 'coins_amount' })
+	coinsAmount!: number;
 
 	@Column({ type: 'int', nullable: true })
 	bonus?: number;
