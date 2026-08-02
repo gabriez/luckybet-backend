@@ -10,17 +10,19 @@ import {
 	Post,
 	Query,
 } from '@nestjs/common';
-import { ApiCookieAuth, ApiCreatedResponse, ApiOkResponse, ApiQuery } from '@nestjs/swagger';
+import {
+	ApiCookieAuth,
+	ApiCreatedResponse,
+	ApiOkResponse,
+	ApiQuery,
+} from '@nestjs/swagger';
 
 import {
 	buildPaginatedResponse,
 	buildResponse,
 } from '../../../shared/libs/buildResponse';
 import { MISIONES_CORE_PROVIDER } from '../../app/constants';
-import {
-	StepResponseDto,
-	UserMissionResponseDto,
-} from '../../app/dto/mission.schema';
+import { StepResponseDto, UserMissionResponseDto } from '../../app/dto/mission.schema';
 import { StepStatus } from '../../app/enums';
 import type { ForManagePlayerMissions } from '../../ports/driven/ForManagePlayerMissions';
 
@@ -85,9 +87,7 @@ export class PlayerMisionesController {
 	@Get('players/:playerId/missions/:userMissionId')
 	@HttpCode(HttpStatus.OK)
 	@ApiOkResponse({ type: UserMissionResponseDto })
-	async getPlayerMission(
-		@Param('userMissionId', ParseIntPipe) userMissionId: number,
-	) {
+	async getPlayerMission(@Param('userMissionId', ParseIntPipe) userMissionId: number) {
 		const result = await this.misionesCore.getPlayerMission(userMissionId);
 		return buildResponse(result, 'Mision obtenida exitosamente', true);
 	}

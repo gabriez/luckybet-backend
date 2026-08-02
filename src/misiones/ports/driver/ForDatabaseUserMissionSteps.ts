@@ -1,5 +1,5 @@
-import { StepStatus } from '../../app/enums';
 import type { StepSubmission } from '../../app/dto/mission.schema';
+import { StepStatus } from '../../app/enums';
 
 export interface ForDatabaseUserMissionSteps {
 	createOrUpdateSubmission(data: {

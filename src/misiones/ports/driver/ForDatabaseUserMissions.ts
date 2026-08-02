@@ -26,8 +26,5 @@ export interface ForDatabaseUserMissions {
 
 	updateCurrentStep(id: number, step: number): Promise<UserMissionBasic>;
 
-	updateStatus(
-		id: number,
-		status: UserMissionStatus,
-	): Promise<UserMissionBasic>;
+	updateStatus(id: number, status: UserMissionStatus): Promise<UserMissionBasic>;
 }
