@@ -1,4 +1,5 @@
 import cookie from '@fastify/cookie';
+import multipart from '@fastify/multipart';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
@@ -12,9 +13,20 @@ import { TypeORMErrorsException } from './shared/exceptions/typeOrmErrors.except
 async function bootstrap() {
 	const app = await NestFactory.create<NestFastifyApplication>(
 		AppModule,
-		new FastifyAdapter(),
+		new FastifyAdapter({ bodyLimit: 10 * 1024 * 1024 }),
 	);
 	await app.register(cookie);
+	await app.register(multipart, {
+		limits: { fileSize: 5 * 1024 * 1024, files: 1 },
+		attachFieldsToBody: 'keyValues',
+		onFile: async part => {
+			part.value = {
+				buffer: await part.toBuffer(),
+				filename: part.filename,
+				mimetype: part.mimetype,
+			};
+		},
+	});
 	const configService = app.get(ConfigService);
 
 	app.setGlobalPrefix('api/v1.0');

@@ -1,3 +1,4 @@
+import type { UploadableFile } from '../../../shared/storage/storage.port';
 import type {
 	StepSubmission,
 	UserMissionBasic,
@@ -11,7 +12,7 @@ export interface ForManagePlayerMissions {
 	submitStep(
 		userMissionId: number,
 		stepId: number,
-		data: { submissionText?: string; submissionImageUrl?: string },
+		data: { submissionText?: string; submissionImage?: UploadableFile },
 	): Promise<StepSubmission>;
 
 	reviewStep(

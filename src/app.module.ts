@@ -10,6 +10,7 @@ import { MisionesModule } from './misiones/misiones.module';
 import { buildTypeOrmOptionsFromConfig } from './shared/database/databaseOptions';
 import { RequestLoggerInterceptor } from './shared/interceptors/requestLogger.interceptor';
 import { LoggerModule } from './shared/logger/logger.module';
+import { StorageModule } from './shared/storage/storage.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -22,6 +23,7 @@ import { UsersModule } from './users/users.module';
 		HealthModule,
 		UsersModule,
 		LoggerModule,
+		StorageModule,
 		AuthModule,
 		MisionesModule,
 	],

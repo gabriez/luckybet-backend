@@ -11,6 +11,8 @@ import {
 	Query,
 } from '@nestjs/common';
 import {
+	ApiBody,
+	ApiConsumes,
 	ApiCookieAuth,
 	ApiCreatedResponse,
 	ApiOkResponse,
@@ -22,6 +24,7 @@ import {
 	buildResponse,
 } from '../../../shared/libs/buildResponse';
 import { MISIONES_CORE_PROVIDER } from '../../app/constants';
+import type { SubmitStepMultipartDto } from '../../app/dto/create-mission.dto';
 import { StepResponseDto, UserMissionResponseDto } from '../../app/dto/mission.schema';
 import { StepStatus } from '../../app/enums';
 import type { ForManagePlayerMissions } from '../../ports/driven/ForManagePlayerMissions';
@@ -48,13 +51,22 @@ export class PlayerMisionesController {
 	@Post('players/:playerId/missions/:userMissionId/steps/:stepId/submit')
 	@HttpCode(HttpStatus.OK)
 	@ApiOkResponse({ type: StepResponseDto })
+	@ApiConsumes('multipart/form-data')
+	@ApiBody({
+		schema: {
+			type: 'object',
+			properties: {
+				submissionText: { type: 'string' },
+				submissionImage: { type: 'string', format: 'binary' },
+			},
+		},
+	})
 	async submitStep(
 		@Param('userMissionId', ParseIntPipe) userMissionId: number,
 		@Param('stepId', ParseIntPipe) stepId: number,
-		@Body()
-		body: { submissionText?: string; submissionImageUrl?: string },
+		@Body() dto: SubmitStepMultipartDto,
 	) {
-		const result = await this.misionesCore.submitStep(userMissionId, stepId, body);
+		const result = await this.misionesCore.submitStep(userMissionId, stepId, dto);
 		return buildResponse(result, 'Paso enviado exitosamente', true);
 	}
 

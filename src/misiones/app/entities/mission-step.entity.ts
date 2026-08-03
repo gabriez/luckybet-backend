@@ -20,9 +20,6 @@ export class MissionStep extends BaseEntity {
 	@Column({ type: 'text', nullable: true })
 	content?: string;
 
-	@Column({ type: 'varchar', length: 500, nullable: true, name: 'image_url' })
-	imageUrl?: string;
-
 	// Relationships
 	@ManyToOne(() => Mission, { onDelete: 'CASCADE' })
 	@JoinColumn({ name: 'mission_id' })
