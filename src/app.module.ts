@@ -29,7 +29,7 @@ import { UsersModule } from './users/users.module';
 	],
 	providers: [
 		{ provide: APP_INTERCEPTOR, useClass: RequestLoggerInterceptor },
-		{ provide: APP_PIPE, useClass: ZodValidationPipe },
+		// { provide: APP_PIPE, useClass: ZodValidationPipe },
 	],
 })
 export class AppModule {}

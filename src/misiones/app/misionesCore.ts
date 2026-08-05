@@ -27,13 +27,20 @@ export class MisionesCore implements ForManageMissions, ForManagePlayerMissions 
 		private readonly storage: StorageService,
 	) {}
 
+	private toPublicUrl(key: string | null | undefined): string | undefined {
+		return key ? this.storage.buildPublicUrl(key) : undefined;
+	}
+
 	// ─── Admin: Mission CRUD ────────────────────────────────────
 
 	async createMission(data: CreateMissionMultipartDto): Promise<MissionWithSteps> {
 		const { image, ...missionData } = data;
+
 		const imageUrl = await this.storage.uploadImage(image, 'missions');
 		try {
-			return await this.missionRepo.createMission({ ...missionData, imageUrl });
+			const mission = await this.missionRepo.createMission({ ...missionData, imageUrl });
+			mission.imageUrl = this.toPublicUrl(mission.imageUrl);
+			return mission;
 		} catch (error) {
 			// Cleanup: avoid orphan objects in the bucket if the DB write fails
 			await this.storage.deleteImage(imageUrl).catch(() => undefined);
@@ -58,6 +65,7 @@ export class MisionesCore implements ForManageMissions, ForManagePlayerMissions 
 			imageUrl: newUrl,
 		});
 		if (!updated) throw new NotFoundException('Mision no encontrada');
+		updated.imageUrl = this.toPublicUrl(updated.imageUrl);
 		return updated;
 	}
 
@@ -73,6 +81,7 @@ export class MisionesCore implements ForManageMissions, ForManagePlayerMissions 
 			imageUrl: null,
 		});
 		if (!updated) throw new NotFoundException('Mision no encontrada');
+		updated.imageUrl = this.toPublicUrl(updated.imageUrl);
 		return updated;
 	}
 
@@ -91,18 +100,22 @@ export class MisionesCore implements ForManageMissions, ForManagePlayerMissions 
 	async getMission(id: number): Promise<MissionWithSteps> {
 		const mission = await this.missionRepo.findByIdWithSteps(id);
 		if (!mission) throw new NotFoundException('Mision no encontrada');
+		mission.imageUrl = this.toPublicUrl(mission.imageUrl);
 		return mission;
 	}
 
 	async listMissions(params: { take?: number; skip?: number }): Promise<{
-		missions: MissionBasic[];
+		missions: MissionWithSteps[];
 		total: number;
 		limit: number;
 		skip: number;
 	}> {
 		const [missions, total] = await this.missionRepo.getMissions(params);
 		return {
-			missions,
+			missions: missions.map(m => ({
+				...m,
+				imageUrl: this.toPublicUrl(m.imageUrl),
+			})),
 			total,
 			limit: params.take ?? 100,
 			skip: params.skip ?? 0,
@@ -122,6 +135,7 @@ export class MisionesCore implements ForManageMissions, ForManagePlayerMissions 
 
 		const updated = await this.missionRepo.updateMission(id, data);
 		if (!updated) throw new NotFoundException('Mision no encontrada');
+		updated.imageUrl = this.toPublicUrl(updated.imageUrl);
 		return updated;
 	}
 
@@ -134,7 +148,9 @@ export class MisionesCore implements ForManageMissions, ForManagePlayerMissions 
 		}
 
 		// Row lock handled in repo layer via pessimistic_write
-		return this.missionRepo.activateMission(id);
+		const activated = await this.missionRepo.activateMission(id);
+		activated.imageUrl = this.toPublicUrl(activated.imageUrl);
+		return activated;
 	}
 
 	async changeMissionStatus(id: number, status: MissionStatus): Promise<MissionBasic> {
@@ -159,6 +175,7 @@ export class MisionesCore implements ForManageMissions, ForManagePlayerMissions 
 
 		const updated = await this.missionRepo.updateMission(id, { status });
 		if (!updated) throw new NotFoundException('Mision no encontrada');
+		updated.imageUrl = this.toPublicUrl(updated.imageUrl);
 		return updated;
 	}
 
@@ -225,12 +242,17 @@ export class MisionesCore implements ForManageMissions, ForManagePlayerMissions 
 			submissionText = data.submissionText;
 		}
 
-		return this.stepRepo.createOrUpdateSubmission({
-			userMissionId,
-			missionStepId: stepId,
-			submissionText,
-			submissionImageUrl,
-		});
+		return this.stepRepo
+			.createOrUpdateSubmission({
+				userMissionId,
+				missionStepId: stepId,
+				submissionText,
+				submissionImageUrl,
+			})
+			.then(submission => ({
+				...submission,
+				submissionImageUrl: this.toPublicUrl(submission.submissionImageUrl),
+			}));
 	}
 
 	async reviewStep(
@@ -262,7 +284,10 @@ export class MisionesCore implements ForManageMissions, ForManagePlayerMissions 
 			}
 		}
 
-		return submission;
+		return {
+			...submission,
+			submissionImageUrl: this.toPublicUrl(submission.submissionImageUrl),
+		};
 	}
 
 	async getPlayerMissions(
@@ -286,10 +311,18 @@ export class MisionesCore implements ForManageMissions, ForManagePlayerMissions 
 	async getPlayerMission(id: number): Promise<UserMissionWithSteps> {
 		const um = await this.userMissionRepo.findByIdWithSteps(id);
 		if (!um) throw new NotFoundException('Mision de usuario no encontrada');
+		um.steps = um.steps.map(step => ({
+			...step,
+			submissionImageUrl: this.toPublicUrl(step.submissionImageUrl),
+		}));
 		return um;
 	}
 
 	async getReviewQueue(): Promise<StepSubmission[]> {
-		return await this.stepRepo.findPendingReviews();
+		const queue = await this.stepRepo.findPendingReviews();
+		return queue.map(step => ({
+			...step,
+			submissionImageUrl: this.toPublicUrl(step.submissionImageUrl),
+		}));
 	}
 }

@@ -30,9 +30,9 @@ import {
 } from '../../../shared/libs/buildResponse';
 import type { UploadableFile } from '../../../shared/storage/storage.port';
 import { MISIONES_CORE_PROVIDER } from '../../app/constants';
-import type { CreateMissionMultipartDto } from '../../app/dto/create-mission.dto';
+import { CreateMissionMultipartDto } from '../../app/dto/create-mission.dto';
 import { MissionListResponseDto, MissionResponseDto } from '../../app/dto/mission.schema';
-import type { UpdateMissionDto } from '../../app/dto/update-mission.dto';
+import { UpdateMissionDto } from '../../app/dto/update-mission.dto';
 import type { MissionStatus } from '../../app/enums';
 import type { ForManageMissions } from '../../ports/driven/ForManageMissions';
 

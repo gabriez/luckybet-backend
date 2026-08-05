@@ -10,7 +10,7 @@ export interface ForManageMissions {
 	getMission(id: number): Promise<MissionWithSteps>;
 
 	listMissions(params: { take?: number; skip?: number }): Promise<{
-		missions: MissionBasic[];
+		missions: MissionWithSteps[];
 		total: number;
 		limit: number;
 		skip: number;

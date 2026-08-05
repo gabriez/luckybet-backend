@@ -24,7 +24,7 @@ import {
 	buildResponse,
 } from '../../../shared/libs/buildResponse';
 import { MISIONES_CORE_PROVIDER } from '../../app/constants';
-import type { SubmitStepMultipartDto } from '../../app/dto/create-mission.dto';
+import { SubmitStepMultipartDto } from '../../app/dto/create-mission.dto';
 import { StepResponseDto, UserMissionResponseDto } from '../../app/dto/mission.schema';
 import { StepStatus } from '../../app/enums';
 import type { ForManagePlayerMissions } from '../../ports/driven/ForManagePlayerMissions';

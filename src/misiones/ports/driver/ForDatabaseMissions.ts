@@ -16,7 +16,7 @@ export interface ForDatabaseMissions {
 	getMissions(params: {
 		take?: number;
 		skip?: number;
-	}): Promise<[MissionBasic[], number]>;
+	}): Promise<[MissionWithSteps[], number]>;
 
 	updateMission(id: number, data: UpdateMissionData): Promise<MissionBasic | null>;
 
