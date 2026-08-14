@@ -292,10 +292,62 @@ export type UserMissionWithSteps = UserMissionBasic & {
 	steps: StepSubmission[];
 };
 
+export type ReviewQueueByPlayer = {
+	playerId: number;
+	playerName?: string;
+	missions: {
+		userMissionId: number;
+		missionId: number;
+		missionTitle: string;
+		missionDescription?: string;
+		missionType: string;
+		coinsAmount: number;
+		experiencePoints: number;
+		userMissionStatus: string;
+		imageUrl?: string;
+		steps: StepSubmission[];
+	}[];
+};
+
 // ─── Swagger Response Schemas ──────────────────────────────────
 export const MissionResponseSchema = apiResponseSchema(createMissionSchema);
 
 export const MissionListResponseSchema = paginatedResponseSchema(createMissionSchema);
+
+const stepSubmissionResponseSchema = z.object({
+	id: z.number().int(),
+	userMissionId: z.number().int(),
+	missionStepId: z.number().int(),
+	status: z.string(),
+	submissionText: z.string().optional(),
+	submissionImageUrl: z.string().optional(),
+	reviewedById: z.number().int().optional(),
+	reviewedAt: z.string().optional(),
+	reviewerNotes: z.string().optional(),
+});
+
+const reviewQueueMissionSchema = z.object({
+	userMissionId: z.number().int(),
+	missionId: z.number().int(),
+	missionTitle: z.string(),
+	missionDescription: z.string().optional(),
+	missionType: z.string(),
+	coinsAmount: z.number().int(),
+	experiencePoints: z.number().int(),
+	userMissionStatus: z.string(),
+	imageUrl: z.string().optional(),
+	steps: z.array(stepSubmissionResponseSchema),
+});
+
+const reviewQueueByPlayerSchema = z.object({
+	playerId: z.number().int(),
+	playerName: z.string().optional(),
+	missions: z.array(reviewQueueMissionSchema),
+});
+
+export const PlayerMissionsQueueResponseSchema = paginatedResponseSchema(
+	reviewQueueByPlayerSchema,
+);
 
 // ─── Response DTOs ─────────────────────────────────────────────
 export class MissionResponseDto extends createZodDto(MissionResponseSchema) {}
@@ -304,3 +356,6 @@ export class UserMissionResponseDto extends createZodDto(
 	apiResponseSchema(z.object({})),
 ) {}
 export class StepResponseDto extends createZodDto(apiResponseSchema(z.object({}))) {}
+export class PlayerMissionsQueueResponseDto extends createZodDto(
+	PlayerMissionsQueueResponseSchema,
+) {}

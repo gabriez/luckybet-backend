@@ -43,7 +43,7 @@ describe('PlayerMisionesController', () => {
 			reviewStep: jest.fn(),
 			getPlayerMissions: jest.fn(),
 			getPlayerMission: jest.fn(),
-			getReviewQueue: jest.fn(),
+			getPlayerMissionsQueue: jest.fn(),
 		};
 
 		const module: TestingModule = await Test.createTestingModule({
@@ -133,14 +133,28 @@ describe('PlayerMisionesController', () => {
 
 	// ─── GET review queue ───────────────────────────────────────────
 
-	describe('getReviewQueue', () => {
-		it('debería devolver la cola de revision', async () => {
-			mockCore.getReviewQueue.mockResolvedValue([mockStepSubmission]);
+	describe('getPlayerMissionsQueue', () => {
+		it('debería devolver la cola de revision paginada', async () => {
+			mockCore.getPlayerMissionsQueue.mockResolvedValue({
+				players: [mockStepSubmission as never],
+				total: 1,
+				limit: 100,
+				skip: 0,
+			});
 
-			const result = await controller.getReviewQueue();
+			const result = await controller.getPlayerMissionsQueue();
 
-			expect(result.data).toEqual([mockStepSubmission]);
+			expect(mockCore.getPlayerMissionsQueue).toHaveBeenCalledWith({
+				status: undefined,
+				playerId: undefined,
+				experience: undefined,
+				coinsAmount: undefined,
+				type: undefined,
+				take: undefined,
+				skip: undefined,
+			});
 			expect(result.message).toBe('Cola de revision obtenida exitosamente');
+			expect(result.status).toBe(true);
 		});
 	});
 

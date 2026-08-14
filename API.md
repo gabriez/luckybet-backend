@@ -473,9 +473,55 @@ También valida orden del paso (`stepOrder` debe ser el actual).
 
 ## GET `/admin/missions/review-queue`
 
-**Formato**: sin body · **Respuesta**: `200` → `data: StepSubmission[]` (solo `PENDING`).
+**Formato**: query · **Respuesta**: `200`
 
-**Aviso**: endpoint expuesto **sin autenticación**.
+| Query | Tipo | Requerido | Reglas |
+|---|---|---|---|
+| `status` | enum | ❌ | `StepStatus` \| `UserMissionStatus`; default `PENDING` |
+| `playerId` | number | ❌ | — |
+| `experience` | number | ❌ | umbral: `experiencePoints >= experience` |
+| `coinsAmount` | number | ❌ | igualdad exacta sobre `coinsAmount` |
+| `type` | enum | ❌ | `DAILY` \| `WEEKLY` \| `FIXED` |
+| `take` | number | ❌ | default `100`; pagina **jugadores**, no filas de steps |
+| `skip` | number | ❌ | default `0` |
+
+**Semántica de `status`**:
+- `StepStatus` (`PENDING` / `APPROVED` / `REJECTED`) → una misión califica si tiene **≥1 step** con ese status; solo se muestran esos steps.
+- `UserMissionStatus` (`IN_PROGRESS` / `COMPLETED` / `EXPIRED` / `CANCELLED`) → filtra `userMission.status`; se muestran **todos** los steps de esas misiones.
+- Sin parámetro → default `PENDING`.
+
+**Respuesta**: `buildPaginatedResponse(players, 'Cola de revision obtenida exitosamente', true, { skip, limit, total })` → paginado por **jugador**: `data: ReviewQueueByPlayer[]` + `meta`:
+
+```json
+{
+  "status": true,
+  "data": [
+    {
+      "playerId": 1,
+      "playerName": "string?",
+      "missions": [
+        {
+          "userMissionId": 1,
+          "missionId": 1,
+          "missionTitle": "string",
+          "missionDescription": "string?",
+          "missionType": "DAILY | WEEKLY | FIXED",
+          "coinsAmount": 100,
+          "experiencePoints": 50,
+          "userMissionStatus": "IN_PROGRESS",
+          "imageUrl": "string?",
+          "steps": [ "StepSubmission[]" ]
+        }
+      ]
+    }
+  ],
+  "message": "Cola de revision obtenida exitosamente"
+}
+```
+
+**Nota**: `meta.total` cuenta **jugadores distintos**, no steps. `submissionImageUrl` (de cada step) e `imageUrl` (de la misión) llegan como URLs públicas.
+
+**Aviso**: endpoint expuesto **sin autenticación** (los `@ApiCookieAuth` son solo documentación).
 
 ---
 
@@ -524,3 +570,4 @@ También valida orden del paso (`stepOrder` debe ser el actual).
 | `UserMissionBasic` | id, playerId, missionId, status, currentStep, startedAt?, completedAt? |
 | `StepSubmission` | id, userMissionId, missionStepId, status, submissionText?, submissionImageUrl?, reviewedById?, reviewedAt?, reviewerNotes? |
 | `UserMissionWithSteps` | `UserMissionBasic` + steps: `StepSubmission[]` |
+| `ReviewQueueByPlayer` | playerId, playerName?, missions: { userMissionId, missionId, missionTitle, missionDescription?, missionType, coinsAmount, experiencePoints, userMissionStatus, imageUrl?, steps: `StepSubmission[]` }[] |

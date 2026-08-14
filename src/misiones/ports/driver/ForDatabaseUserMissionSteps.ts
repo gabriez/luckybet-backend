@@ -22,6 +22,4 @@ export interface ForDatabaseUserMissionSteps {
 		adminId: number,
 		notes?: string,
 	): Promise<StepSubmission>;
-
-	findPendingReviews(): Promise<StepSubmission[]>;
 }

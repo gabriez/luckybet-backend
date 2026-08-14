@@ -1,7 +1,10 @@
+import type { FindOptionsWhere } from 'typeorm';
+
 import type {
 	UserMissionBasic,
 	UserMissionWithSteps,
 } from '../../app/dto/mission.schema';
+import type { UserMission } from '../../app/entities/user-mission.entity';
 import { UserMissionStatus } from '../../app/enums';
 
 export interface ForDatabaseUserMissions {
@@ -23,6 +26,10 @@ export interface ForDatabaseUserMissions {
 	): Promise<[UserMissionBasic[], number]>;
 
 	findByIdWithSteps(id: number): Promise<UserMissionWithSteps | null>;
+
+	findUserMissionsWithContext(
+		where: FindOptionsWhere<UserMission>,
+	): Promise<UserMission[]>;
 
 	updateCurrentStep(id: number, step: number): Promise<UserMissionBasic>;
 

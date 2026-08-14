@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindOptionsWhere, Repository } from 'typeorm';
 
 import type {
 	StepSubmission,
@@ -79,6 +79,16 @@ export class UserMissionRepoService implements ForDatabaseUserMissions {
 				reviewerNotes: s.reviewerNotes,
 			})),
 		};
+	}
+
+	findUserMissionsWithContext(
+		where: FindOptionsWhere<UserMission>,
+	): Promise<UserMission[]> {
+		return this.userMissionModel.find({
+			where,
+			relations: { player: true, mission: true, steps: true },
+			order: { created_at: 'DESC' },
+		});
 	}
 
 	async updateCurrentStep(id: number, step: number): Promise<UserMissionBasic> {

@@ -25,8 +25,12 @@ import {
 } from '../../../shared/libs/buildResponse';
 import { MISIONES_CORE_PROVIDER } from '../../app/constants';
 import { SubmitStepMultipartDto } from '../../app/dto/create-mission.dto';
-import { StepResponseDto, UserMissionResponseDto } from '../../app/dto/mission.schema';
-import { StepStatus } from '../../app/enums';
+import {
+	PlayerMissionsQueueResponseDto,
+	StepResponseDto,
+	UserMissionResponseDto,
+} from '../../app/dto/mission.schema';
+import { MissionType, StepStatus, UserMissionStatus } from '../../app/enums';
 import type { ForManagePlayerMissions } from '../../ports/driven/ForManagePlayerMissions';
 
 @Controller()
@@ -106,10 +110,42 @@ export class PlayerMisionesController {
 
 	@Get('admin/missions/review-queue')
 	@HttpCode(HttpStatus.OK)
-	@ApiOkResponse({ type: StepResponseDto })
-	async getReviewQueue() {
-		const result = await this.misionesCore.getReviewQueue();
-		return buildResponse(result, 'Cola de revision obtenida exitosamente', true);
+	@ApiOkResponse({ type: PlayerMissionsQueueResponseDto })
+	@ApiQuery({
+		name: 'status',
+		required: false,
+		enum: [...Object.values(StepStatus), ...Object.values(UserMissionStatus)],
+	})
+	@ApiQuery({ name: 'playerId', required: false, type: Number })
+	@ApiQuery({ name: 'experience', required: false, type: Number })
+	@ApiQuery({ name: 'coinsAmount', required: false, type: Number })
+	@ApiQuery({ name: 'type', required: false, enum: MissionType })
+	@ApiQuery({ name: 'take', required: false, type: Number })
+	@ApiQuery({ name: 'skip', required: false, type: Number })
+	async getPlayerMissionsQueue(
+		@Query('status') status?: string,
+		@Query('playerId', new ParseIntPipe({ optional: true })) playerId?: number,
+		@Query('experience', new ParseIntPipe({ optional: true })) experience?: number,
+		@Query('coinsAmount', new ParseIntPipe({ optional: true })) coinsAmount?: number,
+		@Query('type') type?: string,
+		@Query('take', new ParseIntPipe({ optional: true })) take?: number,
+		@Query('skip', new ParseIntPipe({ optional: true })) skip?: number,
+	) {
+		const result = await this.misionesCore.getPlayerMissionsQueue({
+			status,
+			playerId,
+			experience,
+			coinsAmount,
+			type,
+			take,
+			skip,
+		});
+		return buildPaginatedResponse(
+			result.players,
+			'Cola de revision obtenida exitosamente',
+			true,
+			{ skip: result.skip, limit: result.limit, total: result.total },
+		);
 	}
 
 	@Post('admin/missions/steps/:stepId/review')

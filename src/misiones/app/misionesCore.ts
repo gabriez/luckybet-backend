@@ -1,9 +1,13 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { FindOptionsWhere, MoreThanOrEqual } from 'typeorm';
 
 import { ForDatabaseUsers } from '@/src/users/ports/driver/ForDatabaseUsers';
 import type { StorageService, UploadableFile } from '../../shared/storage/storage.port';
 import type { ForManageMissions } from '../ports/driven/ForManageMissions';
-import type { ForManagePlayerMissions } from '../ports/driven/ForManagePlayerMissions';
+import type {
+	ForManagePlayerMissions,
+	PlayerMissionsQueueResult,
+} from '../ports/driven/ForManagePlayerMissions';
 import type { ForDatabaseMissions } from '../ports/driver/ForDatabaseMissions';
 import type { ForDatabaseUserMissionSteps } from '../ports/driver/ForDatabaseUserMissionSteps';
 import type { ForDatabaseUserMissions } from '../ports/driver/ForDatabaseUserMissions';
@@ -11,12 +15,22 @@ import type { CreateMissionMultipartDto } from './dto/create-mission.dto';
 import type {
 	MissionBasic,
 	MissionWithSteps,
+	ReviewQueueByPlayer,
 	StepSubmission,
 	UserMissionBasic,
 	UserMissionWithSteps,
 } from './dto/mission.schema';
 import type { UpdateMissionDto } from './dto/update-mission.dto';
-import { MissionStatus, StepStatus, StepType, UserMissionStatus } from './enums';
+import type { Mission } from './entities/mission.entity';
+import type { UserMission } from './entities/user-mission.entity';
+import type { UserMissionStep } from './entities/user-mission-step.entity';
+import {
+	MissionStatus,
+	MissionType,
+	StepStatus,
+	StepType,
+	UserMissionStatus,
+} from './enums';
 
 export class MisionesCore implements ForManageMissions, ForManagePlayerMissions {
 	constructor(
@@ -318,11 +332,168 @@ export class MisionesCore implements ForManageMissions, ForManagePlayerMissions 
 		return um;
 	}
 
-	async getReviewQueue(): Promise<StepSubmission[]> {
-		const queue = await this.stepRepo.findPendingReviews();
-		return queue.map(step => ({
-			...step,
-			submissionImageUrl: this.toPublicUrl(step.submissionImageUrl),
+	async getPlayerMissionsQueue(filters: {
+		status?: string;
+		playerId?: number;
+		experience?: number;
+		coinsAmount?: number;
+		type?: string;
+		take?: number;
+		skip?: number;
+	}): Promise<PlayerMissionsQueueResult> {
+		const take = filters.take ?? 100;
+		const skip = filters.skip ?? 0;
+
+		const { stepStatus, umStatus } = this.resolveQueueStatus(filters.status);
+
+		// Single repository find over the whole matching set; grouping and
+		// pagination by distinct players happen in memory in core.
+		const userMissions = await this.userMissionRepo.findUserMissionsWithContext(
+			this.buildUserMissionQueueWhere({
+				umStatus,
+				playerId: filters.playerId,
+				experience: filters.experience,
+				coinsAmount: filters.coinsAmount,
+				type: this.resolveMissionType(filters.type),
+			}),
+		);
+
+		const players = this.groupUserMissionsByPlayer(userMissions, stepStatus);
+		const page = players.slice(skip, skip + take);
+
+		return { players: page, total: players.length, limit: take, skip };
+	}
+
+	// ─── Review queue helpers ────────────────────────────────────
+
+	/**
+	 * Resolves the `status` filter into an exclusive step-level or
+	 * mission-level condition. Valid StepStatus values filter the step
+	 * submission; valid UserMissionStatus values filter the user mission.
+	 * Default (undefined/invalid) is StepStatus.PENDING.
+	 */
+	private resolveQueueStatus(status?: string): {
+		stepStatus?: StepStatus;
+		umStatus?: UserMissionStatus;
+	} {
+		if (status === undefined || status === null) {
+			return { stepStatus: StepStatus.PENDING };
+		}
+		if (Object.values(StepStatus).includes(status as StepStatus)) {
+			return { stepStatus: status as StepStatus };
+		}
+		if (Object.values(UserMissionStatus).includes(status as UserMissionStatus)) {
+			return { umStatus: status as UserMissionStatus };
+		}
+		return { stepStatus: StepStatus.PENDING };
+	}
+
+	private resolveMissionType(type?: string): MissionType | undefined {
+		if (type === undefined || type === null) return;
+		return Object.values(MissionType).includes(type as MissionType)
+			? (type as MissionType)
+			: undefined;
+	}
+
+	private buildUserMissionQueueWhere(params: {
+		umStatus?: UserMissionStatus;
+		playerId?: number;
+		experience?: number;
+		coinsAmount?: number;
+		type?: MissionType;
+	}): FindOptionsWhere<UserMission> {
+		const where: FindOptionsWhere<UserMission> = {};
+		if (params.playerId !== undefined) {
+			where.playerId = params.playerId;
+		}
+		if (params.umStatus) {
+			where.status = params.umStatus;
+		}
+
+		const missionWhere: FindOptionsWhere<Mission> = {};
+		if (params.experience !== undefined) {
+			missionWhere.experiencePoints = MoreThanOrEqual(params.experience);
+		}
+		if (params.coinsAmount !== undefined) {
+			missionWhere.coinsAmount = params.coinsAmount;
+		}
+		if (params.type) {
+			missionWhere.type = params.type;
+		}
+		if (Object.keys(missionWhere).length > 0) {
+			where.mission = missionWhere;
+		}
+		return where;
+	}
+
+	private groupUserMissionsByPlayer(
+		userMissions: UserMission[],
+		stepStatus?: StepStatus,
+	): ReviewQueueByPlayer[] {
+		const byPlayer = new Map<
+			number,
+			{
+				playerId: number;
+				playerName?: string;
+				missions: Map<number, ReviewQueueByPlayer['missions'][number]>;
+			}
+		>();
+
+		for (const um of userMissions) {
+			const steps =
+				stepStatus === undefined
+					? (um.steps ?? [])
+					: (um.steps ?? []).filter(s => s.status === stepStatus);
+			if (stepStatus !== undefined && steps.length === 0) {
+				continue;
+			}
+
+			const playerId = um.playerId;
+
+			let playerEntry = byPlayer.get(playerId);
+			if (!playerEntry) {
+				playerEntry = {
+					playerId,
+					playerName: um.player?.username,
+					missions: new Map(),
+				};
+				byPlayer.set(playerId, playerEntry);
+			}
+
+			playerEntry.missions.set(um.id, {
+				userMissionId: um.id,
+				missionId: um.missionId,
+				missionTitle: um.mission?.title ?? '',
+				missionDescription: um.mission?.description,
+				missionType: um.mission?.type ?? '',
+				coinsAmount: um.mission?.coinsAmount ?? 0,
+				experiencePoints: um.mission?.experiencePoints ?? 0,
+				userMissionStatus: um.status,
+				imageUrl: this.toPublicUrl(um.mission?.imageUrl),
+				steps: steps.map(step => this.toQueueStepSubmission(step)),
+			});
+		}
+
+		// Player order = first-encountered order (Map insertion order),
+		// which follows the query order (created_at DESC) — deterministic.
+		return Array.from(byPlayer.values()).map(entry => ({
+			playerId: entry.playerId,
+			playerName: entry.playerName,
+			missions: Array.from(entry.missions.values()),
 		}));
+	}
+
+	private toQueueStepSubmission(step: UserMissionStep): StepSubmission {
+		return {
+			id: step.id,
+			userMissionId: step.userMissionId,
+			missionStepId: step.missionStepId,
+			status: step.status,
+			submissionText: step.submissionText,
+			submissionImageUrl: this.toPublicUrl(step.submissionImageUrl),
+			reviewedById: step.reviewedById,
+			reviewedAt: step.reviewedAt,
+			reviewerNotes: step.reviewerNotes,
+		};
 	}
 }
